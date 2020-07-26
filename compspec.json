@@ -1,0 +1,309 @@
+{
+  "meta": {
+    "name": "Decentralized LASSO Regression Demo",
+    "id": "dlasso",
+    "version": "v1.0.0",
+    "repository": "https:\/\/github.com\/MRN-Code\/coinstac-lasso-csv",
+    "description": "A test from multi-shot LASSO regresssion"
+  },
+  "computation": {
+    "type": "docker",
+    "dockerImage": "coinstacteam/dlasso",
+    "command": [
+      "python",
+      "\/computation\/scripts\/local.py"
+    ],
+    "remote": {
+      "type": "docker",
+      "dockerImage": "coinstacteam/dlasso",
+      "command": [
+        "python",
+        "\/computation\/scripts\/remote.py"
+      ]
+    },
+    "input": {
+      "covariates":   
+      {
+        "label": "Covariates",
+        "description": "Demographic or medical features (e.g., isControl, sex, age)",    
+        "type": "array",
+        "items": ["boolean", "number"],
+        "order": 1
+      },    
+      "data": 
+      {
+        "label": "Measurements",
+        "description": "Files containing brain region measurements (e.g., FreeSurfer files)", 
+        "items": ["FreeSurfer"],
+        "extensions": [["csv", "txt"]],
+        "order": 0
+      },
+      "label":   
+      {
+        "label": "Label", 
+        "description": "The continuous dependent variable y to predict",  
+        "type": "string",
+        "source": "owner",
+        "order": 1
+      },    
+      "train_split_local":
+      {
+        "default": 1.0,
+        "label": "Train_Split_local",
+        "description": "Percentage of data used for training at each local site (excluding the owner site)",
+        "max": 1,
+        "min": 0,
+        "step": 0.1,
+        "type": "number",
+        "source": "owner",
+        "order": 4
+      },
+      "train_split_owner":
+      {
+        "default": 1.0,
+        "label": "Train_Split_owner",
+        "description": "Percentage of data used for training at the owner site",
+        "max": 1,
+        "min": 0,
+        "step": 0.1,
+        "type": "number",
+        "source": "owner",
+        "order": 4
+      },
+      "shuffle":
+      {
+        "default": false,
+        "label": "Shuffle",
+        "description": "Whether or not to shuffle the data before train/test splitting.",
+        "type": "boolean",
+        "source": "owner", 
+        "order": 4
+      },         
+      "random_state":
+      {
+        "default": null,
+        "label": "Random_state",
+        "description": "Controls the shuffling before train/test split. Int: a new random number generator seeded by the given int. null: use the global random state instance from numpy.random.",
+        "max": "MAX_INTEGER",
+        "min": "MIN_INTEGER",
+        "step": 1,
+        "type": "number",
+        "source": "owner",
+        "order": 4
+      },
+      "preprocess_method":
+      {
+        "default": "normalize",
+        "label": "Preprocess_Method",
+        "description": "Method to transform X, choose from 'normalize', 'standardize', 'center' and 'none'",
+        "type": "string",
+        "source": "owner",
+        "order": 4
+      },   
+      "max_iter":
+      {
+        "default": 1000,
+        "label": "Max_Iter",
+        "description": "Maximum number of iteration for LASSO",
+        "max": 100000000,
+        "min": 1,
+        "step": 100,
+        "type": "number",
+        "source": "owner",
+        "order": 4
+      },
+      "tol":
+      {
+        "default": 1e-3,
+        "label": "Tol",
+        "description": "Tolerance for the optimization: if the total change of coefficent in one iter is smaller than it, stop LASSO",
+        "max": 1000,
+        "min": 1e-300,
+        "step": "logrithmic",
+        "type": "number",
+        "source": "owner",
+        "order": 4
+      },
+      "positive":
+      {
+        "default": false,
+        "label": "Is_Coef_Positive",
+        "description": "Only retain positive coefficients, shrink all negative coefficients to 0",
+        "type": "boolean",
+        "source": "owner", 
+        "order": 4
+      },   
+      "selection":
+      {
+        "default": "cyclic",
+        "label": "Selection",
+        "description": "Choose from 'cyclic' and 'random': if 'random', coefficients are updated randomly rather than sequentially",
+        "type": "string",
+        "source": "owner",
+        "order": 4
+      },         
+      "lambdas":
+      {
+        "default": [],
+        "label": "Lambdas",
+        "description": "If use_CV = false, list of L1 regularization parameters where to compute the models, else used in CV to pick the best lambda. If [], set by 'eps' and 'n_lambdas'",
+        "type": "array",
+        "items": ["number"],
+        "source": "owner",
+        "order": 2
+      },
+      "eps":
+      {
+        "default": 1e-3,
+        "label": "Eps",
+        "description": "lambda_min / lambda_max, length of the regularization path.",
+        "max": 1.0,
+        "min": 1e-100,
+        "step": "logrithmic",
+        "type": "number",
+        "source": "owner",
+        "order": 4
+      },      
+      "n_lambdas":
+      {
+        "default": 10,
+        "label": "N_lambdas",
+        "description": "Number of lambda along where to compute the models",
+        "max": 1.0,
+        "min": 1e-100,
+        "step": "logrithmic",
+        "type": "number",
+        "source": "owner",
+        "order": 4
+      },  
+      "use_CV":
+      {
+        "default": false,
+        "label": "Use_CV",
+        "description": "If true, train and test a model with the lambda picked by CV. If false, train and test models with 'lambdas'.",
+        "type": "boolean",
+        "source": "owner", 
+        "order": 4
+      },   
+      "n_folds":
+      {
+        "default": 5,
+        "label": "N_folds",
+        "description": "Number of folds for CV",
+        "max": 1000,
+        "min": 2,
+        "step": 1,
+        "type": "number",
+        "source": "owner",
+        "order": 4
+      },
+      "shuffle_CV":
+      {
+        "default": false,
+        "label": "Shuffle_CV",
+        "description": "Whether or not shuffle the data before splitting training data into folds. The samples within each fold will not be shuffled.",
+        "type": "boolean",
+        "source": "owner", 
+        "order": 4
+      },   
+      "random_state_CV":
+      {
+        "default": null,
+        "label": "Random_state",
+        "description": "Controls the shuffling before splitting training data into folds. Int: a new random number generator seeded by the given int. None: use the global random state instance from numpy.random.",
+        "max": "MAX_INTEGER",
+        "min": "MIN_INTEGER",
+        "step": 1,
+        "type": "number",
+        "source": "owner",
+        "order": 4
+      }
+
+    },
+    "output": {  
+      "regressions": {
+        "label": "Regressions",
+        "type": "array",
+        "items": {
+          "global_stats": {
+            "label": "Global Stats",
+            "type": "object",
+            "items": {
+              "avg_beta_vector": {
+                "label": "Avg Beta Vector",
+                "type": "array"
+              },
+              "r2_global": {
+                "label": "R2 Global",
+                "type": "number"
+              },
+              "ts_global": {
+                "label": "TS Global",
+                "type": "array"
+              },
+              "ps_global": {
+                "label": "PS Global",
+                "type": "number"
+              },
+              "dof_global": {
+                "label": "DOF Global",
+                "type": "array"
+              }
+            }
+          },
+          "local_stats": {
+            "label": "Local Stats",
+            "type": "object",
+            "items": {
+              "beta": {
+                "label": "Beta",
+                "type": "array"
+              },
+              "pval": {
+                "label": "PVal",
+                "type": "array"
+              },
+              "rsquared": {
+                "label": "R Squared",
+                "type": "number"
+              },
+              "sse": {
+                "label": "SSE",
+                "type": "number"
+              },
+              "tval": {
+                "label": "TVal",
+                "type": "array"
+              }
+            }
+          },
+          "ROI": {
+            "label": "Region of Interest",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "display": [ 
+      {
+        "type": "string",
+        "tables": [
+          {
+            "source": "regressions",
+            "subtables": [
+              {
+                "source": "global_stats",
+                "subtitle": "ROI"
+              },
+              {
+                "source": "local_stats",
+                "subtitle": "ROI",
+                "subtables": "by-key"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
