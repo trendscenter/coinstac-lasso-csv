@@ -11,8 +11,8 @@ Run a testing case: `./run.sh`
 
 ### 2. Two functionalities
 1. Pick the best L1-regularizer lambda by cross validation (CV) and then train & test at that lambda. Set `use_CV = true`.
-    - The best lambda is the one generating the smallest mean squared errors (MSE) averaged over the folds.
-    - Note that CV decides the best lambda based on predictive accuracy, thus it tends to be a small one and may not be the one in the "true" model [[2]](#2). 
+    - The best lambda is the one generating the smallest mean squared error (MSE) averaged over the folds.
+    - Note that CV decides the best lambda based on predictive accuracy, thus it tends to pick a small one and may not be the one in the "true" model [[2]](#2). 
     - Sample input: [inputspec_CV.json](test/inputspec_CV.json)
     - Sample output: [output_CV.json](output_CV.json)
 
@@ -24,7 +24,7 @@ Run a testing case: `./run.sh`
 
     <img src="https://github.com/trendscenter/coinstac-lasso-csv/blob/master/output_nonCV.png?raw=true" width=420 height=1100> 
 
-    - The regularization path along the list of lambdas can be obtained from `ws_for_scaled_data` in the output:
+    - The regularization paths along the list of lambda can be obtained from `ws_for_scaled_data` in the output:
     <img src="https://github.com/trendscenter/coinstac-lasso-csv/blob/master/regularization_paths.png?raw=true"> 
 
 ### 3. Input
@@ -32,7 +32,7 @@ Run a testing case: `./run.sh`
 
 - train/test split:
     - `train_split_local/owner`: proportion of data used for training at all local sites but the owner site/at the owner site. If <= 0, all used for testing. If a float within (0, 1), proportion of data used for training. If >= 1, all used for training.
-    - There should be both training and testing data. No testing (i.e., `train_split_local >= 1` and `train_split_owner >= 1`) or no training data (i.e., `train_split_local <= 0` and `train_split_owner <= 0`) will trigger a ValueError.
+    - There should be both training and testing data. No testing data (i.e., `train_split_local >= 1` and `train_split_owner >= 1`) or no training data (i.e., `train_split_local <= 0` and `train_split_owner <= 0`) will trigger a ValueError.
     - To have repeatable runs, you can set `shuffle = false` or you can set `shuffle = true` and `random_state = an integer`. Otherwise, you can set `shuffle = true` and `random_state = null`. It's the same for the settings in CV, `shuffle_CV` and `random_state_CV`.
 
 - preprocess method: four options are provided to preprocess the training data X (n_samples, n_features) and y (n_samples,) before training. The operations on X are column-wise.
@@ -47,7 +47,7 @@ Run a testing case: `./run.sh`
 
 - lambdas:
     - If `use_CV = true`, CV will be conducted along the `lambdas` and the best lambda will be chosen from the `lambdas`. If `use_CV = false`, a model will be computed at each `lambdas`.
-    - There are two ways to input lambdas. One is to directly input a list of values in `lambdas`. The other one is to set `lamdas` empty as `lambdas = []` and set values for `eps` and `n_lambdas`. This program will automatically calculate lambda_max (i.e., if lambda >= lambda_max, w = 0), then lambda_min = `eps` * lambda_max, and finally set a list of lambdas of length `n_lambdas` spaced evenly on a log scale. 
+    - There are two ways to input lambdas. One is to directly input a list of values in `lambdas`. The other one is to set `lamdas` empty as `lambdas = []` and set values for `eps` and `n_lambdas`. This program will automatically calculate lambda_max (i.e., if lambda >= lambda_max, w = 0), then get lambda_min = `eps` * lambda_max, and finally set a list of lambda of length `n_lambdas` spaced evenly on a log scale. 
 
 ### 4. Output
 - w is outputed in two forms. `ws_for_scaled_data` contains the w's for preprocessed data. `ws` contains the w's for unpreprocessed data, i.e., the raw input data. 

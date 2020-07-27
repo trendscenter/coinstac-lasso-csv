@@ -5,6 +5,7 @@ import os
 import numpy as np
 import pandas as pd
 
+
 def parse_csv(input):
     """Parses CSV-style data in inputspec.json.
 
@@ -20,7 +21,7 @@ def parse_csv(input):
     """
     # process covariates
     raw = input["covariates"][0][1:]
-    cols = input["covariates"][0][0] 
+    cols = input["covariates"][0][0]
     index_name = cols[0]  # e.g., freesurferfile
 
     features_df = pd.DataFrame.from_records(raw, columns=cols)
@@ -29,11 +30,11 @@ def parse_csv(input):
     # process measurements
     if input["data"]:
         raw = input["data"][0][1:]
-        cols = input["data"][0][0] 
+        cols = input["data"][0][0]
         index_name = cols[0]
 
         measurements_df = pd.DataFrame.from_records(raw, columns=cols)
-        measurements_df.set_index(index_name, inplace=True)   
+        measurements_df.set_index(index_name, inplace=True)
 
         # merge measurements_df into features_df
         features_df = features_df.merge(
@@ -46,11 +47,15 @@ def parse_csv(input):
     #     string, e.g.,'1', then you should manually set this class
     #     as categorical type before calling pd.get_dummies():
     #         df['A'] = df['A'].astype('category')
-    #     Otherwise, pd.to_numeric converts is to int/float.    
+    #     Otherwise, pd.to_numeric converts is to int/float.
     features_df = features_df.apply(pd.to_numeric, errors="ignore")
-    features_df = pd.get_dummies(features_df, drop_first=True)  # convert categorical features
+    features_df = pd.get_dummies(
+        features_df, drop_first=True
+    )  # convert categorical features
     features_df = features_df * 1  # True -> 1, False -> 0
-    features_df = features_df.apply(pd.to_numeric, errors="ignore")  # object 0, 1 -> int
+    features_df = features_df.apply(
+        pd.to_numeric, errors="ignore"
+    )  # object 0, 1 -> int
 
     # separate features_df to get features matrix and label matrix
     label_name = input["label"]

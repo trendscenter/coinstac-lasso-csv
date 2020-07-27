@@ -2452,7 +2452,7 @@
     "value": null
   },      
   "preprocess_method": {
-    "value": "standardize"
+    "value": "none"
   },
   "max_iter": {
     "value": 2
@@ -2476,7 +2476,7 @@
     "value": 3
   },
   "use_CV": {
-    "value": true
+    "value": false
   },      
   "n_folds": {
     "value": 2
@@ -4942,7 +4942,7 @@
     "value": null
   },      
   "preprocess_method": {
-    "value": "standardize"
+    "value": "none"
   },
   "max_iter": {
     "value": 2
@@ -4966,7 +4966,7 @@
     "value": 3
   },
   "use_CV": {
-    "value": true
+    "value": false
   },      
   "n_folds": {
     "value": 2
@@ -7472,7 +7472,7 @@
     "value": null
   },      
   "preprocess_method": {
-    "value": "standardize"
+    "value": "none"
   },
   "max_iter": {
     "value": 2
@@ -7496,7 +7496,7 @@
     "value": 3
   },
   "use_CV": {
-    "value": true
+    "value": false
   },      
   "n_folds": {
     "value": 2
@@ -10502,7 +10502,7 @@
     "value": null
   },      
   "preprocess_method": {
-    "value": "standardize"
+    "value": "none"
   },
   "max_iter": {
     "value": 2
@@ -10526,7 +10526,7 @@
     "value": 3
   },
   "use_CV": {
-    "value": true
+    "value": false
   },      
   "n_folds": {
     "value": 2
