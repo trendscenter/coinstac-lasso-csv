@@ -1,42 +1,22 @@
-"""Parsers to extract features X and labels y from raw data.
+"""Parsers to extract features X and label y from the data in inputspec.json.
 """
 import os
 
 import numpy as np
 import pandas as pd
 
-# def parse(id, cache_dir, base_dir):
-#     with open(os.path.join(base_dir + "/data" + str(id)[-1] + ".npy"), "rb") as fp:
-#         Xy = np.load(fp)
-#     # raise Exception(str(Xy.shape))
-#     X_train = Xy[:, :-1]
-#     y_train = Xy[:, -1]
-
-#     # n_features = 10
-#     X_test = np.array([[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 1.0],
-#                        [1.0, 2.0, 3.0, 7.0, 6.0, 5.0, 3.0, 9.0, 2.0, 9.0]])
-#     y_test = np.array([4.0, 9.0])
-
-#     np.save(os.path.join(cache_dir, "X_train.npy"), X_train)
-#     np.save(os.path.join(cache_dir, "X_test.npy"), X_test)
-#     np.save(os.path.join(cache_dir, "y_train.npy"), y_train)
-#     np.save(os.path.join(cache_dir, "y_test.npy"), y_test)    
-
-#     return X_train, X_test, y_train, y_test
-
 def parse_csv(input):
-    """Parses csv in inputspec.json, returns features X and labels y.
+    """Parses CSV-style data in inputspec.json.
+
+    For Lasso, label y should be continuous.
 
     Args:
-        input (dict): Input of COINSTAC pipeline at each iteration.
-        base_dir (str): baseDirectory at each site.
+        input: COINSTAC input dict.
 
     Returns:
-        features_np (ndarray of shape (n_sample, n_feature)): X.
-        labels_np (ndarray of shape (n_sample,)): y.
-        name_features
-
-    label should be continuous, not categorical
+        features_np: np.ndarray of shape (n_sample, n_feature), X.
+        labels_np: np.ndarray of shape (n_sample,), y.
+        name_features: str list, name of each feature. 
     """
     # process covariates
     raw = input["covariates"][0][1:]
@@ -79,7 +59,5 @@ def parse_csv(input):
     # convert to np.ndarray
     features_np = features_df.to_numpy()
     label_np = label_df.to_numpy().flatten()
-
-    # raise Exception(list(features_df.columns))
 
     return features_np, label_np, list(features_df.columns)

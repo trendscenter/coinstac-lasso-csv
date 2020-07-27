@@ -1,10 +1,10 @@
 {
   "meta": {
-    "name": "Decentralized LASSO Regression Demo",
+    "name": "Decentralized Lasso Regression Demo",
     "id": "dlasso",
     "version": "v1.0.0",
     "repository": "https:\/\/github.com\/MRN-Code\/coinstac-lasso-csv",
-    "description": "A test from multi-shot LASSO regresssion"
+    "description": "A test from multi-shot Lasso regresssion"
   },
   "computation": {
     "type": "docker",
@@ -44,27 +44,27 @@
         "description": "The continuous dependent variable y to predict",  
         "type": "string",
         "source": "owner",
-        "order": 1
+        "order": 2
       },    
       "train_split_local":
       {
-        "default": 1.0,
-        "label": "Train_Split_local",
-        "description": "Percentage of data used for training at each local site (excluding the owner site)",
-        "max": 1,
-        "min": 0,
+        "default": 0.8,
+        "label": "Train_split_local",
+        "description": "Proportion of data used for training at all local sites but the owner site. If <= 0, all used for testing. If a float within (0, 1), proportion of data used for training. If >= 1, all used for training.",
+        "max": 2,
+        "min": -1,
         "step": 0.1,
         "type": "number",
         "source": "owner",
-        "order": 4
+        "order": 3
       },
       "train_split_owner":
       {
-        "default": 1.0,
-        "label": "Train_Split_owner",
-        "description": "Percentage of data used for training at the owner site",
-        "max": 1,
-        "min": 0,
+        "default": 0.8,
+        "label": "Train_split_owner",
+        "description": "Proportion of data used for training at the owner site. Same as train_split_local.",
+        "max": 2,
+        "min": -1,
         "step": 0.1,
         "type": "number",
         "source": "owner",
@@ -77,7 +77,7 @@
         "description": "Whether or not to shuffle the data before train/test splitting.",
         "type": "boolean",
         "source": "owner", 
-        "order": 4
+        "order": 5
       },         
       "random_state":
       {
@@ -87,115 +87,115 @@
         "max": "MAX_INTEGER",
         "min": "MIN_INTEGER",
         "step": 1,
-        "type": "number",
+        "type": "number or null",
         "source": "owner",
-        "order": 4
+        "order": 6
       },
       "preprocess_method":
       {
         "default": "normalize",
-        "label": "Preprocess_Method",
-        "description": "Method to transform X, choose from 'normalize', 'standardize', 'center' and 'none'",
+        "label": "Preprocess_method",
+        "description": "Method to transform the training data, choose from 'normalize', 'standardize', 'center' and 'none'.",
         "type": "string",
         "source": "owner",
-        "order": 4
+        "order": 7
       },   
       "max_iter":
       {
-        "default": 1000,
+        "default": 10,
         "label": "Max_Iter",
-        "description": "Maximum number of iteration for LASSO",
+        "description": "Maximum number of iteration for Lasso.",
         "max": 100000000,
         "min": 1,
-        "step": 100,
+        "step": 1,
         "type": "number",
         "source": "owner",
-        "order": 4
+        "order": 8
       },
       "tol":
       {
         "default": 1e-3,
         "label": "Tol",
-        "description": "Tolerance for the optimization: if the total change of coefficent in one iter is smaller than it, stop LASSO",
+        "description": "Tolerance for the optimization: if the total absolute change of coefficents in one iteration is smaller than it, stop training.",
         "max": 1000,
-        "min": 1e-300,
+        "min": 1e-100,
         "step": "logrithmic",
         "type": "number",
         "source": "owner",
-        "order": 4
+        "order": 9
       },
       "positive":
       {
         "default": false,
         "label": "Is_Coef_Positive",
-        "description": "Only retain positive coefficients, shrink all negative coefficients to 0",
+        "description": "Only retain positive coefficients, shrink all negative coefficients to 0.",
         "type": "boolean",
         "source": "owner", 
-        "order": 4
+        "order": 10
       },   
       "selection":
       {
         "default": "cyclic",
         "label": "Selection",
-        "description": "Choose from 'cyclic' and 'random': if 'random', coefficients are updated randomly rather than sequentially",
+        "description": "Choose from 'cyclic' and 'random': if 'random', coefficients are updated randomly rather than sequentially.",
         "type": "string",
         "source": "owner",
-        "order": 4
+        "order": 11
       },         
       "lambdas":
       {
         "default": [],
         "label": "Lambdas",
-        "description": "If use_CV = false, list of L1 regularization parameters where to compute the models, else used in CV to pick the best lambda. If [], set by 'eps' and 'n_lambdas'",
+        "description": "If use_CV = false, list of L1 regularization parameters where to compute the models, else used in CV to pick the best lambda. If [], set by 'eps' and 'n_lambdas'.",
         "type": "array",
         "items": ["number"],
         "source": "owner",
-        "order": 2
+        "order": 12
       },
       "eps":
       {
         "default": 1e-3,
         "label": "Eps",
-        "description": "lambda_min / lambda_max, length of the regularization path.",
+        "description": "Length of the regularization path, lambda_min  = eps * lambda_max.",
         "max": 1.0,
         "min": 1e-100,
         "step": "logrithmic",
         "type": "number",
         "source": "owner",
-        "order": 4
+        "order": 13
       },      
       "n_lambdas":
       {
-        "default": 10,
+        "default": 3,
         "label": "N_lambdas",
-        "description": "Number of lambda along where to compute the models",
-        "max": 1.0,
-        "min": 1e-100,
-        "step": "logrithmic",
+        "description": "Number of lambda where to compute the models.",
+        "max": 100,
+        "min": 1,
+        "step": 1,
         "type": "number",
         "source": "owner",
-        "order": 4
+        "order": 14
       },  
       "use_CV":
       {
         "default": false,
         "label": "Use_CV",
-        "description": "If true, train and test a model with the lambda picked by CV. If false, train and test models with 'lambdas'.",
+        "description": "If true, compute a model at the lambda picked by CV. If false, compute models at 'lambdas'.",
         "type": "boolean",
         "source": "owner", 
-        "order": 4
+        "order": 15
       },   
       "n_folds":
       {
-        "default": 5,
+        "default": 3,
         "label": "N_folds",
-        "description": "Number of folds for CV",
-        "max": 1000,
+        "description": "Number of folds in CV. Should be <= n_samples in the training dataset at each local site. Otherwise will raise a ValueError.",
+        "max": 10,
         "min": 2,
         "step": 1,
         "type": "number",
         "source": "owner",
-        "order": 4
+        "order": 16
       },
       "shuffle_CV":
       {
@@ -204,7 +204,7 @@
         "description": "Whether or not shuffle the data before splitting training data into folds. The samples within each fold will not be shuffled.",
         "type": "boolean",
         "source": "owner", 
-        "order": 4
+        "order": 17
       },   
       "random_state_CV":
       {
@@ -214,9 +214,9 @@
         "max": "MAX_INTEGER",
         "min": "MIN_INTEGER",
         "step": 1,
-        "type": "number",
+        "type": "number or null",
         "source": "owner",
-        "order": 4
+        "order": 18
       }
 
     },

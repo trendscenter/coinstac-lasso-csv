@@ -1,18 +1,17 @@
 """Script run at the remote site.
 
-At iteration 0, run remote_0(): Aggregates classifiers from local sites, saves 
-    and sends them to the owner site.
-At iteration 1, run remote_1(): Receives a classifier from the owner site and
-    outputs classifiers and confusion matrix from both owner and local sites.
+The remote site:
+    0. aggregates local stats to set the mean, scale and sum of squares of each feature of the whole. 
+    1. initiates the training, aggregates the local updates to train the model.
+    2. aggregates local performance metrics of testing for the whole metrics.  
 
 Raises:
-    Exception: If neither 'local_0' nor 'local_1' is in sys.stdin.
+    Exception: If the value of "msg" from sys.stdin is neither empty nor in ["to_agg_mean", "to_agg_scale", "to_init_train", "to_agg_train", "to_agg_test"].
 """
 import sys
 
 import numpy as np
-# import ujson as json
-import json
+import ujson as json
 import copy
 
 from common_functions import list_recursive
@@ -22,12 +21,6 @@ from remote_ancillary import set_lambdas, pick_jth_feature
 from linear_model_ancillary import set_w_intercept, agg_MSE, agg_R2, set_rank
 
    
-def remote_idle():
-    output = {"started": True}
-    result_dict = {"output": output}
-    return json.dumps(result_dict) 
-
-
 def remote_agg_mean(args): 
     input, state, cache = readin_remote(args)
     owner = state["owner"] if "owner" in state else "local0"
@@ -38,7 +31,7 @@ def remote_agg_mean(args):
     cache["used_CV"] = False
 
     # agg stats
-    output = {"started": True}
+    output = {}
     stats = Stats_agg(preprocess_method, n_features)
     stats.agg_stats(input)
     stats.add_output(output)
@@ -51,18 +44,16 @@ def remote_agg_mean(args):
         stats_CV.add_cache(cache)   
     
     result_dict = {"output": output, "cache": cache}
-    # raise Exception(result_dict)    
     return json.dumps(result_dict)
 
 
 def remote_agg_scale(args):
-    # extra step for "standardize" X_train, X_folds
     input, state, cache = readin_remote(args)
     n_features = cache["n_features"]
     use_CV = cache["use_CV"]
     preprocess_method = cache["preprocess_method"]
     
-    output = {"started": True}
+    output = {}
     scale_X_train, sqsum_X_train = agg_scale_sqsum(input, preprocess_method, n_features, cache["n_samples_train"])
     output["mean_X_train"] = cache["mean_X_train"]
     output["mean_y_train"] = cache["mean_y_train"]    
@@ -99,11 +90,9 @@ def remote_init_train(args):
 
     if not list(list_recursive(cache, "i_lambda")):   
         cache["i_lambda"] = 0 
-        # set lambdas: sort or generate new if []
         lambdas = set_lambdas(cache["lambdas"], input, cache)
         cache["lambdas"] = lambdas
         cache["n_lambdas"] = len(lambdas)
-        # raise Exception(lambdas)
 
     # init i_fold, i_lambda
     if use_CV:
@@ -111,6 +100,8 @@ def remote_init_train(args):
             cache["i_fold"] = 0
         if not list(list_recursive(cache, "MSEs_CV")): 
             cache["MSEs_CV"] = []
+            cache["convergeds_CV"] = []
+            cache["n_iters_CV"] = []
     else:
         if not list(list_recursive(cache, "ws")):
             cache["ws_for_scaled_data"] = []            
@@ -131,7 +122,6 @@ def remote_init_train(args):
 
     # dicts
     output = {
-        "started": True,
         "msg": "to_train",
         "w": w, 
         "jj": jj
@@ -146,7 +136,6 @@ def remote_init_train(args):
     cache["dw"] = dw  
      
     result_dict = {"output": output, "cache": cache}
-    # raise Exception(type(cache["jj"]))
     return json.dumps(result_dict)
 
 
@@ -161,7 +150,6 @@ def remote_agg_train(args):
     selection = cache["selection"]
 
     lambdas = cache["lambdas"]
-    # n_lambdas = cache["n_lambdas"]
     i_lambda = cache["i_lambda"]
     if use_CV:
         i_fold = cache["i_fold"]
@@ -176,15 +164,13 @@ def remote_agg_train(args):
     dw = float(cache["dw"])  # float
 
     if use_CV:
-        # i_fold = cache["i_fold"]
         sqsum_X = np.array(cache["sqsum_X_folds"][i_fold], dtype='float64')                
     else:
         sqsum_X = np.array(cache["sqsum_X_train"], dtype='float64')   
-        # raise Exception(sqsum_X)     
 
     # agg c_jj
-    c_jj = sum(site_dict["c_jj_local"] for site, site_dict in input.items() if "c_jj_local" in site_dict) 
-    # raise Exception(c_jj)
+    c_jj = sum(site_dict["c_jj_local"] for site, site_dict in input.items()) 
+
     # update w_jj
     w_prev = w[jj]  # store previous value
     if positive and c_jj < 0:
@@ -192,19 +178,17 @@ def remote_agg_train(args):
     else: # soft function
         if sqsum_X[jj] != 0:
             w[jj] = np.sign(c_jj) * max(abs(c_jj) - lambda_, 0) / sqsum_X[jj]
-    # raise Exception(w[jj])
+
     # update dw 
     dw += abs(w_prev - w[jj])
 
     # update i_feature
     i_feature += 1
     if i_feature == n_features: 
-        # raise Exception(w)
         if dw < tol:   # reached tolerance, terminate training 
             w_for_scaled_data = copy.deepcopy(w)  
             w, intercept = set_w_intercept(w, use_CV, cache)
-            output = {"started": True,
-                      "msg": "to_test",
+            output = {"msg": "to_test",
                       "w": w,
                       "intercept": intercept
             }
@@ -219,18 +203,15 @@ def remote_agg_train(args):
             cache["converged"] = True
             cache["n_iter"] = i_iter + 1
             result_dict = {"output": output, "cache": cache}
-            # raise Exception("tol\n" + str(w))
             return json.dumps(result_dict)   
         else:  # update i_iter 
             i_iter += 1           
             if i_iter >= max_iter:  # reached max_iter, terminate training 
                 w_for_scaled_data = copy.deepcopy(w)                     
-                w, intercept = set_w_intercept(w, use_CV, cache)
-                output = {
-                    "started": True,
-                    "msg": "to_test",
-                    "w": w,
-                    "intercept": intercept
+                w, intercept = set_w_intercept(w, use_CV, cache)            
+                output = {"msg": "to_test",
+                          "w": w,
+                          "intercept": intercept
                 }
                 if use_CV:
                     output["i_fold"] = cache["i_fold"]
@@ -242,12 +223,7 @@ def remote_agg_train(args):
                 cache["intercept"] = intercept
                 cache["converged"] = False
                 cache["n_iter"] = max_iter
-                result_dict = {"output": output, "cache": cache}
-                # raise Exception(str(type(w_for_scaled_data)) + "\n"
-                #                 + str(type(w)) + "\n"
-                #                 + str(type(intercept))
-                #                 )
-                # raise Exception("max_iter\n" + str(w))                
+                result_dict = {"output": output, "cache": cache}              
                 return json.dumps(result_dict)  
             else:  # reset for next iter
                 i_feature = 0 
@@ -258,7 +234,6 @@ def remote_agg_train(args):
 
     # dicts
     output = {
-        "started": True,
         "msg": "to_train",
         "w": w,
         "jj": jj
@@ -273,7 +248,6 @@ def remote_agg_train(args):
     cache["dw"] = dw    
 
     result_dict = {"output": output, "cache": cache}
-    # raise Exception(result_dict)
     return json.dumps(result_dict)
 
 
@@ -289,7 +263,8 @@ def remote_agg_test(args):
         i_fold = cache["i_fold"]
         n_samples = cache["n_samples_valids"][i_fold]
         cache["MSEs_CV"].append(agg_MSE(input=input, n_samples=n_samples))
-        # raise Exception(cache["MSEs_CV"])
+        cache["convergeds_CV"].append(cache["converged"])
+        cache["n_iters_CV"].append(cache["n_iter"])
 
         i_lambda += 1  # update i_lambda
         if i_lambda == n_lambdas:
@@ -299,6 +274,8 @@ def remote_agg_test(args):
                 cache["MSEs_CV"] = MSEs_CV_2D.tolist()
                 index = np.argmin(np.sum(MSEs_CV_2D, axis=1))  
                 best_lambda = cache["lambdas"][index]
+                cache["convergeds_CV"] = np.reshape(np.array(cache["convergeds_CV"]), (n_lambdas, n_folds), order='F').tolist()
+                cache["n_iters_CV"] = np.reshape(np.array(cache["n_iters_CV"]), (n_lambdas, n_folds), order='F').tolist()
                 cache["use_CV"] = False
                 cache["used_CV"] = True
                 cache["lambdas_CV"] = cache["lambdas"]
@@ -322,39 +299,41 @@ def remote_agg_test(args):
         cache["n_iters"].append(cache["n_iter"])
         
         i_lambda += 1  # update i_lambda       
-        if i_lambda == n_lambdas:  # ending!!!
+        if i_lambda == n_lambdas:  # program ending!!!
             output = {}
-            output["label"] = cache["label"]  
-            output["train_split_local"] = cache["train_split_local"]
-            output["train_split_owner"] = cache["train_split_owner"] 
-            output["train_index"] = cache["train_index"]
-            output["test_index"] = cache["test_index"]              
-            output["preprocess_method"] = cache["preprocess_method"]
-            output["max_iter"] = cache["max_iter"]
-            output["tol"] = cache["tol"]
-            output["positive"] = cache["positive"]
-            output["selection"] = cache["selection"]  
-            output["eps"] = cache["eps"]
-            output["n_lambdas"] = cache["n_lambdas"]
-            output["use_CV"] = cache["used_CV"]                       
-            output["ws_for_scaled_data"] = cache["ws_for_scaled_data"]
-            output["ws"] = cache["ws"]
-            output["intercepts"] = cache["intercepts"] 
-            output["MSEs"] = cache["MSEs"]                 
-            output["R2s"] = cache["R2s"]
-            output["w_ranks"] = cache["w_ranks"]
-            output["convergeds"] = cache["convergeds"]
-            output["n_iters"] = cache["n_iters"]   
+            output["label"] = [cache["label"], "string"]  
+            output["train_split_local"] = [cache["train_split_local"], "array"]
+            output["train_split_owner"] = [cache["train_split_owner"], "array"] 
+            output["train_index"] = [cache["train_index"], "array"]
+            output["test_index"] = [cache["test_index"], "array"]              
+            output["preprocess_method"] = [cache["preprocess_method"], "string"]
+            output["max_iter"] = [cache["max_iter"], "number"]
+            output["tol"] = [cache["tol"], "number"]
+            output["positive"] = [cache["positive"], "boolean"]
+            output["selection"] = [cache["selection"], "string"]
+            output["eps"] = [cache["eps"], "number"]
+            output["n_lambdas"] = [cache["n_lambdas"], "number"]
+            output["use_CV"] = [cache["used_CV"], "boolean"]                       
+            output["ws_for_scaled_data"] = [cache["ws_for_scaled_data"], "array"]
+            output["ws"] = [cache["ws"], "array"]
+            output["intercepts"] = [cache["intercepts"], "array"] 
+            output["MSEs"] = [cache["MSEs"], "array"]                
+            output["R2s"] = [cache["R2s"], "array"]
+            output["w_ranks"] = [cache["w_ranks"], "array"]
+            output["convergeds"] = [cache["convergeds"], "array"]
+            output["n_iters"] = [cache["n_iters"], "array"]  
 
             if cache["used_CV"]:
-                output["n_folds"] = cache["n_folds"]
-                output["fold_indices"] = cache["fold_indices"]
-                output["valid_indices"] = cache["valid_indices"]                                
-                output["lambdas_CV"] = cache["lambdas_CV"]
-                output["MSEs_CV (n_lambdas, n_folds)"] = cache["MSEs_CV"]
-                output["best_lambda"] = cache["lambdas"][0]
+                output["n_folds"] = [cache["n_folds"], "number"]
+                output["fold_indices"] = [cache["fold_indices"], "array"]
+                output["valid_indices"] = [cache["valid_indices"], "array"]                                
+                output["lambdas_CV"] = [cache["lambdas_CV"], "array"]
+                output["MSEs_CV (n_lambdas, n_folds)"] = [cache["MSEs_CV"], "array"]
+                output["best_lambda"] = [cache["lambdas"][0], "number"]
+                output["convergeds_CV (n_lambdas, n_folds)"] = [cache["convergeds_CV"], "array"]
+                output["n_iters_CV (n_lambdas, n_folds)"] = [cache["n_iters_CV"], "array"]
             else:              
-                output["lambdas"] = cache["lambdas"]                               
+                output["lambdas"] = [cache["lambdas"], "array"]                               
 
             result_dict = {"output": output, "success": True}
             return json.dumps(result_dict)
@@ -368,13 +347,9 @@ def remote_agg_test(args):
 
 if __name__ == "__main__":
     parsed_args = json.loads(sys.stdin.read())
-    # started = list(list_recursive(parsed_args, "started")) 
     msg = list(list_recursive(parsed_args, "msg"))
 
-    if not msg: 
-        result_dict = remote_idle()  
-        sys.stdout.write(result_dict)
-    elif "to_agg_mean" in msg:
+    if "to_agg_mean" in msg:
         result_dict = remote_agg_mean(parsed_args)  
         sys.stdout.write(result_dict)
     elif "to_agg_scale" in msg:
@@ -390,5 +365,4 @@ if __name__ == "__main__":
         result_dict = remote_agg_test(parsed_args)  
         sys.stdout.write(result_dict)
     else:
-        raise Exception("Error occurred at Remote")
-
+        raise Exception("Error occurred at Remote")  

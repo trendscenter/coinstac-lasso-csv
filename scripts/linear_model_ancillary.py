@@ -3,8 +3,16 @@ from sklearn.metrics import mean_squared_error, r2_score
 
 
 def set_w_intercept(w, use_CV, cache):
-# def set_intercept(self, X_offset, y_offset, X_scale, w):
-    """scale w, set intercept
+    """Scales the slope w and calculates the intercept for unpreprocessed raw data. 
+
+    Args:
+        w: float list, len = n_features, slope in the model y = wx + intercept, for preprocessed data. 
+        use_CV: boolean, whether is using cross validation or not currently.
+        cache: COINSTAC dict.
+
+    Returns:
+        w: float list, len = n_features, slope in the model y = wx + intercept, for unpreprocessed raw data. 
+        intercept: float, intercept in the model y = wx + intercept, for unpreprocessed raw data.  
     """
     if use_CV:
         i_fold = cache["i_fold"]
@@ -16,6 +24,7 @@ def set_w_intercept(w, use_CV, cache):
         y_offset = cache["mean_y_train"]
         X_scale = np.array(cache["scale_X_train"], dtype='float64')
 
+    X_scale = np.where(X_scale == 0.0, 1.0, X_scale)
     w = w / X_scale
     intercept = y_offset - np.dot(X_offset, w)
     
@@ -23,21 +32,44 @@ def set_w_intercept(w, use_CV, cache):
 
 
 def predict(X, w, intercept):
-    """Predict using the linear model.
+    """Returns the prediction y given X and the linear model.
+
+    Args:
+        X: np.ndarray of shape (n_samples, n_features).
+        w: np.ndarray of shape (n_features,), slope in the model y = wx + intercept, for unpreprocessed raw data.
+        intercept: float, intercept in the model y = wx + intercept, for unpreprocessed raw data.          
     """
     return np.matmul(X, w) + intercept
 
 
 def squared_error(a, b):
-    """a, b can be scalar or vector
+    """Returns sum of squares of two vectors.
+
+    Args:
+        a, b: can be both scalar or both vector.
     """
     return sum(np.square(a - b))
 
 
 def agg_MSE(input, n_samples):
+    """Aggregates the Mean Square Errors from the local sites and returns the averaged MSE for the whole.
+
+    Args:
+        input: COINSTAC dict.
+        n_samples: int, number of samples in the testing/validation dataset.
+    """
     return sum(site_dict["se_local"] for site, site_dict in input.items()) / n_samples
 
-def agg_R2(input=input):
+
+def agg_R2(input):
+    """Aggregates the squared errors from the local sites and returns the R2-score for the whole.
+
+    Args:
+        input: COINSTAC dict.
+
+    Raises:
+        Exception: if v == 0, R2-score = 1 - u / v.  
+    """   
     numerator = sum(site_dict["se_local"] for site, site_dict in input.items())
     denominator = sum(site_dict["se_denominator_local"] for site, site_dict in input.items())
     if denominator == 0:
@@ -46,6 +78,15 @@ def agg_R2(input=input):
 
 
 def set_rank(w, name_features):
+    """Sets the rank of the coefficients in w.
+
+    Args:
+        w: float list, len = n_features, slope in the model y = wx + intercept. 
+        name_features: str list, len = n_features, name of each feature.
+
+    Returns:
+        a list of pair [coefficient value, name_feature] sorted by the absolute value of the coefficients in decreasing order.
+    """
     w = np.array(w)
     name_features = np.array(name_features)
 
