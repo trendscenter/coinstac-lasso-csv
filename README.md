@@ -16,14 +16,14 @@ Run a testing case: `./run.sh`
     - Sample input: [inputspec_CV.json](test/inputspec_CV.json)
     - Sample output: [output_CV.json](output_CV.json)
 
-    <img src="https://github.com/trendscenter/coinstac-lasso-csv/blob/master/output_CV.png?raw=true" width=400 height=650>    
+    <img src="https://github.com/trendscenter/coinstac-lasso-csv/blob/master/output_CV.png?raw=true" width=420 height=750>    
    
 2. Train & test at a list of lambdas. Set `use_CV = false`.  
     - Sample input: [inputspec_nonCV.json](test/inputspec_nonCV.json)
     - Sample output: [output_nonCV.json](output_nonCV.json) 
 
-    <img src="https://github.com/trendscenter/coinstac-lasso-csv/blob/master/output_nonCV.png?raw=true" width=450 height=900> 
-      
+    <img src="https://github.com/trendscenter/coinstac-lasso-csv/blob/master/output_nonCV.png?raw=true" width=420 height=1100> 
+
     - The regularization path along the list of lambdas can be obtained from `ws_for_scaled_data` in the output:
     <img src="https://github.com/trendscenter/coinstac-lasso-csv/blob/master/regularization_paths.png?raw=true"> 
 
