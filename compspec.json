@@ -4,7 +4,7 @@
     "id": "dlasso",
     "version": "v1.0.0",
     "repository": "https:\/\/github.com\/MRN-Code\/coinstac-lasso-csv",
-    "description": "A test from multi-shot Lasso regresssion"
+    "description": "A test from multi-shot Lasso regression"
   },
   "computation": {
     "type": "docker",
@@ -117,7 +117,7 @@
         "default": 1e-3,
         "label": "Tol",
         "description": "Tolerance for the optimization: if the total absolute change of coefficents in one iteration is smaller than it, stop training.",
-        "max": 1000,
+        "max": 1e10,
         "min": 1e-100,
         "step": "logrithmic",
         "type": "number",
